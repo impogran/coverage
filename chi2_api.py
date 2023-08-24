@@ -2,6 +2,7 @@ from scipy.stats import chi2_contingency
 
 file = open("data.txt","r")
 lines = file.read().split(",")
+lines = lines[:-1]
 for i in range(len(lines)):
     lines[i] = int(lines[i])
 file.close()

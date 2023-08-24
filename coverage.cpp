@@ -109,18 +109,11 @@ int main()
     ofstream file;
     string file_name = "data.txt";
     file.open(file_name);
-    for (int i = 0; i < ROWS; i++)
+    for (int i = 0; i < COLS; i++)
     {
-        // for (int j = 0; j < 64; j++)
-        // {
-        //     int x = matrix[i][j];
-        //     cout << returned_counting[j] << ",";
-        // }
-
         uint8_t plaintext[8];
         int *returned_counting;
         returned_counting = single_instance(plaintext);
-        // cout<<returned_counting[i]<<endl;
         for (int j = 0; j < ROWS; j++)
         {
             file << returned_counting[j] << ",";
