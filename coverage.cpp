@@ -2,10 +2,29 @@
 #include <iostream>
 #include <cstdint>
 #include <cstring>
+#include <ctime>
+#include <algorithm>
+#include <random>
+#include <chrono>
 
 #include "crypto_aead.h"
 
+#define COLS 10
+#define ROWS 5
+
 using namespace std;
+
+void print_binary(uint8_t number);
+void print_binary_bytes(uint8_t *bytes);
+void print_binary16(uint16_t number);
+
+default_random_engine dre (chrono::steady_clock::now().time_since_epoch().count());     // provide seed
+int random (int lim)
+{
+    uniform_int_distribution<int> uid {0,lim};   // help dre to generate nos from 0 to lim (lim included);
+    return uid(dre);    // pass dre as an argument to uid to generate the random no
+}
+
 
 void encrypt(uint8_t *plain_text, uint8_t *cipher_text)
 {
@@ -19,32 +38,27 @@ void encrypt(uint8_t *plain_text, uint8_t *cipher_text)
     unsigned long long clen, dlen;
     unsigned long long mlen = strlen((char *)plain_text);
     crypto_aead_encrypt(cipher_text, &clen, plain_text, mlen, NULL, 0, NULL, nonce, key);
-
-    // unsigned char decoded_text[24];
-    // int result = crypto_aead_decrypt(decoded_text, &dlen, cipher_text, clen, NULL, 0, NULL, nonce, key);
-    // if(result == 0) {
-    //     cout << "Success decrypted!!!" << endl;
-    // }  else {
-    //     cout << "Incorrect MAC - cipher discarded!!!" << endl;
-    // }
 }
 
-void print_binary(uint8_t number);
-void print_binary_bytes(uint8_t *bytes);
-void print_binary16(uint16_t number);
+uint8_t randomize_plaintext(uint8_t* plaintext) {
+    srand(static_cast<unsigned int>(std::time(nullptr)));
 
-int main()
-{
-    uint8_t plaintext[8] = {'d', 'u', 'p', 'a', 5, 6, 7, 8};
+    for (int i = 0; i < 8; ++i) {
+        plaintext[i] = random(255);
+    }
+
+    return *plaintext;
+}
+
+int* single_instance(uint8_t* plaintext) {
+
+    randomize_plaintext(plaintext);
+
     uint16_t cast[4] = {0, 0, 0, 0};
     for (int i = 0; i < 4; i++)
     {
         cast[i] = ((unsigned int *)plaintext)[i];
     }
-    // for (uint16_t i = 0; i < 4096; i++) {
-    //     uint16_t x = i & 0x0FFF;
-    //     cout << x << endl;
-    // }
     int array[4096];
     for (int i = 0; i < 4096; i++)
     {
@@ -57,6 +71,7 @@ int main()
         for (int i = 0; i < 4; i++)
         {
             cast[i] = ((unsigned int *)plaintext)[i];
+
         }
         cast[0] ^= i;
         uint8_t ciphertext[16];
@@ -68,17 +83,38 @@ int main()
         array[o2]+=1;
     }
     int counting[5]={0,0,0,0,0};
-    for (int i = 0; i < 4096; i++)
+    for (int j = 0; j < 4096; j++)
     {
-        // cout << array[i] << endl;
-        if(i<2572) counting[0]+=array[i];
-        else if(i< 2584 && i>=2572) counting[1]+=array[i];
-        else if(i<2594 && i>=2584) counting[2]+=array[i];
-        else if(i<2606 && i>=2594) counting[3]+=array[i];
-        else counting[4]+=array[i];
+        if(j<2572) counting[0]+=array[j];
+        else if(j< 2584 && j>=2572) counting[1]+=array[j];
+        else if(j<2594 && j>=2584) counting[2]+=array[j];
+        else if(j<2606 && j>=2594) counting[3]+=array[j];
+        else counting[4]+=array[j];
     }
-    for(int i=0;i<5;i++) cout<<counting[i]<<" "<<endl;
+
+    return counting;
 }
+
+int main()
+{
+    uint8_t plaintext[8];
+    int* returned_counting[COLS];
+    int to_return[COLS][ROWS];
+    for(int i=0;i<COLS;i++) {
+        returned_counting[i] = single_instance(plaintext);
+        // cout<<returned_counting[i]<<endl;
+    }
+    for(int i = 0;i<10;i++){
+        for(int j=0;j<5;j++){
+            cout<<returned_counting[i]<<" ";
+
+        }
+        cout<<endl;
+    }
+
+}
+//array [10][5] and put counting into each column
+//expected [0][0] sum of row 0 * sum of col 0 / sum of all fields in array
 
 void print_binary(uint8_t number)
 {
