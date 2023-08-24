@@ -6,9 +6,9 @@ for i in range(len(lines)):
     lines[i] = int(lines[i])
 file.close()
 
-cols = 3 # this is a length of a single range[] element
+cols = 5 # this is a length of a single range[] element
 
-data = [lines[x:x+3] for x in range(0, len(lines),3)]
+data = [lines[x:x+cols] for x in range(0, len(lines),cols)]
 
 stat,p,dof,expected = chi2_contingency(data)
 
