@@ -10,7 +10,7 @@
 #include <string>
 #include <sstream>
 
-#include "crypto_aead.h"
+#include "grain128aead-v2_opt.h"
 
 #define COLS 10
 #define ROWS 5
@@ -21,11 +21,11 @@ void print_binary(uint8_t number);
 void print_binary_bytes(uint8_t *bytes);
 void print_binary16(uint16_t number);
 
-default_random_engine dre(chrono::steady_clock::now().time_since_epoch().count()); // provide seed
-int random(int lim)
-{
-    uniform_int_distribution<int> uid{0, lim}; // help dre to generate nos from 0 to lim (lim included);
-    return uid(dre);                           // pass dre as an argument to uid to generate the random no
+void generate_input(uint8_t* input) {    
+    for(int i = 0; i < 8; i++) {
+        input[i] = rand() % 256;    
+    }
+    //print_binary_bytes(input);
 }
 
 void encrypt(uint8_t *plain_text, uint8_t *cipher_text)
@@ -42,28 +42,15 @@ void encrypt(uint8_t *plain_text, uint8_t *cipher_text)
     crypto_aead_encrypt(cipher_text, &clen, plain_text, mlen, NULL, 0, NULL, nonce, key);
 }
 
-uint8_t randomize_plaintext(uint8_t *plaintext)
-{
-    srand(static_cast<unsigned int>(std::time(nullptr)));
-
-    for (int i = 0; i < 8; ++i) {
-        plaintext[i] = random(255);
-    }
-
-    return *plaintext;
-}
-
 int *single_instance(uint8_t *plaintext)
 {
 
-    randomize_plaintext(plaintext);
+    //randomize_plaintext(plaintext);
+    generate_input(plaintext);
 
     uint16_t cast[4] = {0, 0, 0, 0};
-    for (int i = 0; i < 4; i++)
-    {
-        cast[i] = ((unsigned int *)plaintext)[i];
-    }
-    // memcpy(&cast, plaintext, sizeof(plaintext));
+    memcpy(&cast, plaintext, sizeof(plaintext));
+        
     int array[4096];
     for (int i = 0; i < 4096; i++)
     {
@@ -73,10 +60,8 @@ int *single_instance(uint8_t *plaintext)
     for (int i = 0; i < 4096; i++)
     {
         uint16_t cast[4] = {0, 0, 0, 0};
-        for (int i = 0; i < 4; i++)
-        {
-            cast[i] = ((unsigned int *)plaintext)[i];
-        }
+        generate_input(plaintext);
+        memcpy(&cast, plaintext, sizeof(plaintext));
         cast[0] ^= i;
         uint8_t ciphertext[16];
 
